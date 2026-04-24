@@ -31,21 +31,33 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Подключение к Google Sheets
-try:
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, scope)
-    client = gspread.authorize(creds)
-    spreadsheet = client.open_by_key(SPREADSHEET_ID)
-    sheet = spreadsheet.worksheet(SHEET_NAME)
-    logger.info("Успешно подключено к Google Sheets")
-except Exception as e:
-    logger.error(f"Ошибка подключения к Google Sheets: {str(e)}")
-    raise
+def get_sheet():
+    try:
+        scope = [
+            "https://spreadsheets.google.com/feeds",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        creds = ServiceAccountCredentials.from_json_keyfile_name(
+            CREDENTIALS_FILE,
+            scope
+        )
+        client = gspread.authorize(creds)
+        spreadsheet = client.open_by_key(SPREADSHEET_ID)
+
+        logger.info("Успешно подключено к Google Sheets")
+        return spreadsheet. worksheet(SHEET_NAME)
+
+    except Exception as e:
+        logger.error(f"Ошибка подключения к Google Sheets: {str(e)}")
+        raise
 
 
 # Основная функция для обновления данных
 def update_sheet():
+
     logger.info(f"Начало обновления листа в {datetime.now()}")
+
+    sheet = get_sheet()
 
     try:
         # ── Запрос к API ────────────────────────────────────────
