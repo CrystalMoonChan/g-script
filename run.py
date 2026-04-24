@@ -91,7 +91,23 @@ def update_sheet():
 
         if not field_data:
             logger.warning("Поле 'field' пустое → лист очищен")
-            sheet.clear()
+
+            for attempt in range(3):
+                try:
+                    logger.info(f'Попытка очистки пустого листа #{attempt + 1}')
+                    sheet.clear()
+                    logger.info('Лист успешно очищен')
+                    break
+
+                except Exception as e:
+                    logger.error(f'Ошибка при очистке пустого листа {e}')
+
+                    if attempt < 2:
+                        logger.info('Ждём 15 секунд перед повтором')
+                        time.sleep(15)
+                    else:
+                        logger.error('Не удалось очистить пустой лист после 3-х попыток')
+                        raise
             return
 
         # Подготовка данных
@@ -100,11 +116,41 @@ def update_sheet():
         logger.info(f"К записи: {len(data_to_write)} строк (вкл. заголовки)")
 
         # ── Обновление Google Sheets ────────────────────────────
-        logger.info("Очистка листа")
-        sheet.clear()
+        for attempt in range(3):
+            try:
+                logger.info(f'Попытка очистки листа #{attempt + 1}')
+                sheet.clear()
+                logger.info('Лист успешно очищен')
+                break
+            except Exception as e:
+                logger.error(f'Ошибка при очистке листа {e}')
 
-        logger.info("Массовое обновление с A1")
-        sheet.update(range_name="A1", values=data_to_write)
+                if attempt < 2:
+                    logger.info('Ждём 15 секунд перед повтором')
+                    time.sleep(15)
+                else:
+                    logger.error('Не удалось очистить лист после 3-х попыток')
+                    raise
+
+        for attempt in range(3):
+            try:
+                logger.info(f'Попытка обновления листа #{attempt + 1}')
+                sheet.update(
+                    range_name='A1',
+                    values=data_to_write
+                )
+                logger.info('Лист успешно обновлён')
+                break
+            except Exception as e:
+                logger.error(f'Ошибка при обновлении листа {e}')
+
+                if attempt < 2:
+                    logger.info('Ждём 15 секунд перед повтором')
+                    time.sleep(15)
+                else:
+                    logger.error('Не удалось обновить лист после 3-х попыток')
+                    raise
+
 
         logger.info(f"Успешно записано {len(data_to_write)} строк")
         logger.info("Обновление завершено успешно")
@@ -134,5 +180,8 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"Начальный тестовый запуск не удался: {str(e)}")
     while True:
-        schedule.run_pending()
-        time.sleep(60)  # Проверка каждую минуту
+        try:
+            schedule.run_pending()
+        except Exception as e:
+            logger.error(f'Ошибка во время выполнения задачи по расписанию:{e}')
+        time.sleep(60)
