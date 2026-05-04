@@ -41,11 +41,47 @@ def get_sheet():
             CREDENTIALS_FILE,
             scope
         )
-        client = gspread.authorize(creds)
-        spreadsheet = client.open_by_key(SPREADSHEET_ID)
+        logger.info("Credentials успешно созданы")
+        logger.info("Выполняю gspread.authorize()")
 
-        logger.info("Успешно подключено к Google Sheets")
-        return spreadsheet. worksheet(SHEET_NAME)
+        client = gspread.authorize(creds)
+
+        logger.info("Авторизация прошла успешно")
+        logger.info("Открываю таблицу по key")
+
+        try:
+            r = requests.get(
+                "https://www.googleapis.com",
+                timeout=120
+            )
+            logger.info(f"Google API доступен: {r.status_code}")
+        except Exception as e:
+            logger.error(f"Нет доступа до Google API: {e}")
+
+
+        for attempt in range(3):
+            try:
+                logger.info(f"Попытка открыть таблицу #{attempt + 1}")
+
+                spreadsheet = client.open_by_url(
+                    f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/edit"
+                )
+
+                logger.info("Таблица успешно открыта")
+                break
+
+            except Exception as e:
+                logger.error(f"Ошибка открытия таблицы: {e}")
+                time.sleep(15)
+
+        logger.info("Таблица успешно открыта")
+        logger.info("Получаю worksheet")
+
+        sheet = spreadsheet.worksheet(SHEET_NAME)
+
+        logger.info("Worksheet успешно получен")
+
+        return sheet
 
     except Exception as e:
         logger.error(f"Ошибка подключения к Google Sheets: {str(e)}")
